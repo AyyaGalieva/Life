@@ -6,10 +6,13 @@ import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.TimerTask;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Model extends TimerTask {
     private GUI view;
@@ -76,33 +79,26 @@ public class Model extends TimerTask {
         double impact = 0.0;
         double fst_impact = parameters.getFST_IMPACT();
         double snd_impact = parameters.getSND_IMPACT();
-        
 
-        if (isCellExists(x, y-1)&&field.getCellState(x, y-1))
-            impact += fst_impact;
-        if (isCellExists(x-1, y-1)&&field.getCellState(x-1, y-1))
-            impact += fst_impact;
-        if (isCellExists(x-1, y)&&field.getCellState(x-1, y))
-            impact += fst_impact;
-        if (isCellExists(x+1, y)&&field.getCellState(x+1, y))
-            impact += fst_impact;
-        if (isCellExists(x-1, y+1)&&field.getCellState(x-1, y+1))
-            impact += fst_impact;
-        if (isCellExists(x, y+1)&&field.getCellState(x, y+1))
-            impact += fst_impact;
+        int dx, dy;
+        int fstOffsetX[] = {-1, 1, -1, 0, -1, 0};
+        int fstOffsetY[] = {0, 1, -1};
+        int sndOffsetX[] = {0, 0, -2, 1, -2, 1};
+        int sndOffsetY[] = {2, -2, 1, 1, -1, -1};
 
-        if (isCellExists(x, y-2)&&field.getCellState(x, y-2))
-            impact += snd_impact;
-        if (isCellExists(x+1, y-1)&&field.getCellState(x+1, y-1))
-            impact += snd_impact;
-        if (isCellExists(x-2, y-1)&&field.getCellState(x-2, y-1))
-            impact += snd_impact;
-        if (isCellExists(x-2, y+1)&&field.getCellState(x-2, y+1))
-            impact += snd_impact;
-        if (isCellExists(x+1, y+1)&&field.getCellState(x+1, y+1))
-            impact += snd_impact;
-        if (isCellExists(x, y+2)&&field.getCellState(x, y+2))
-            impact += snd_impact;
+        for (int i = 0; i < 6; ++i) {
+            dx = x + fstOffsetX[i];
+            dy = y + fstOffsetY[i/2];
+            dx += (y%2 == 1 && Math.abs(fstOffsetY[i/2])%2 == 1)?1:0;
+            impact += (isCellExists(dx, dy) && field.getCellState(dx, dy))?fst_impact:0;
+        }
+
+        for (int i = 0; i < 6; ++i) {
+            dx = x + sndOffsetX[i];
+            dy = y + sndOffsetY[i];
+            dx += (y%2 == 1 && Math.abs(sndOffsetY[i])%2 == 1)?1:0;
+            impact += (isCellExists(dx, dy) && field.getCellState(dx, dy))?snd_impact:0;
+        }
 
         return impact;
     }
@@ -150,7 +146,8 @@ public class Model extends TimerTask {
             for (int i = 0; i < alive; ++i) {
                  int x = getNextParameter(in);
                  int y = getNextParameter(in);
-                 newField.setCellState(x, y, true);
+                 if (x < width && y < height)
+                    newField.setCellState(x, y, true);
             }
             in.close();
 
@@ -169,8 +166,12 @@ public class Model extends TimerTask {
     }
 
     private int getNextParameter(Scanner in) {
-        while (!in.hasNextInt())
-            in.nextLine();
+        while (!in.hasNextInt()) {
+            String str[] = (in.nextLine()).split("//");
+            try {
+                return Integer.parseInt(str[0]);
+            } catch (NumberFormatException e) {}
+        }
         return in.nextInt();
     }
 

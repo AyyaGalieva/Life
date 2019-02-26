@@ -3,22 +3,21 @@ package ru.nsu.fit.g16201.galieva.Life.View;
 import ru.nsu.fit.g16201.galieva.Life.Model.CellParameters;
 import ru.nsu.fit.g16201.galieva.Life.Model.Field;
 import ru.nsu.fit.g16201.galieva.Life.Model.Model;
-import ru.nsu.fit.g16201.galieva.Life.View.Listeners.FieldPanelClickListener;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.border.BevelBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 import java.util.TreeMap;
 
 public class GUI extends JFrame {
-    private FieldPanel cellsPanel;
-    //private Field field;
+    private FieldPanel fieldPanel;
     private MenuBar menuBar;
     private JToolBar toolBar;
     private JScrollPane scrollPane;
@@ -32,14 +31,7 @@ public class GUI extends JFrame {
 
     public GUI(Model model) {
         this.model = model;
-        cellsPanel = new FieldPanel(model.getField(), new FieldPanelClickListener() {
-            @Override
-            public void onClick(Point p) {
-                if (model != null) {
-                    model.clickCell(p.x, p.y);
-                }
-            }
-        });
+        fieldPanel = new FieldPanel(model.getField(), p -> model.clickCell(p.x, p.y));
         setTitle("Life");
         setSize(1000, 800);
 
@@ -51,33 +43,32 @@ public class GUI extends JFrame {
             }
         });
 
-        toolBar = new JToolBar();
         menuBar = new MenuBar();
+        toolBar = new JToolBar();
         this.setMenuBar(menuBar);
 
         statusBar = new JLabel();
         statusBar.setPreferredSize(new Dimension(150, 15));
-        statusBar.setBorder(new BevelBorder(BevelBorder.LOWERED));
         statusBar.setBackground(Color.white);
 
-        scrollPane = new JScrollPane(cellsPanel);
+        scrollPane = new JScrollPane(fieldPanel);
         add(scrollPane, BorderLayout.CENTER);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
-        addButton("Save", "File", "Save current state", true, () -> {
-            JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir") + "\\Data\\");
+        addButton("Save", "File", "Save current state", true, "/resources/save.png", () -> {
+            JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir") + "/test/");
             fileChooser.setDialogTitle("Save state");
             int f = fileChooser.showSaveDialog(GUI.this);
             if (f == JFileChooser.APPROVE_OPTION) {
                 File file = fileChooser.getSelectedFile();
-                model.saveParametersInFile(file.getAbsolutePath(), cellsPanel.getCellParameters());
-                cellsPanel.setStateChanged(false);
+                model.saveParametersInFile(file.getAbsolutePath(), fieldPanel.getCellParameters());
+                fieldPanel.setStateChanged(false);
             }
         });
 
-        addButton("Load", "File", "Load state", true, () -> {
-            JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir") + "\\Data\\");
+        addButton("Load", "File", "Load state", true, "/resources/load.png", () -> {
+            JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir") + "/test/");
             fileChooser.setDialogTitle("Load state");
             int f = fileChooser.showOpenDialog(GUI.this);
             if (f == JFileChooser.APPROVE_OPTION) {
@@ -88,20 +79,19 @@ public class GUI extends JFrame {
 
         toolBar.addSeparator();
 
-        addButton("Replace", "Edit", "Sets states of clicked/dragged cells to alive", false, () -> {
+        addButton("Replace", "Edit", "Set states of clicked/dragged cells to alive", false, "", () -> {
             buttonMap.get("XOR").setSelected(false);
             ((CheckboxMenuItem)menuItemMap.get("XOR")).setState(false);
             buttonMap.get("Replace").setSelected(true);
             ((CheckboxMenuItem)menuItemMap.get("Replace")).setState(true);
 
-            if (model != null)
-                model.turnOnReplaceMode();
+            model.turnOnReplaceMode();
         });
 
         buttonMap.get("Replace").doClick();
         ((CheckboxMenuItem)menuItemMap.get("Replace")).setState(true);
 
-        addButton("XOR", "Edit", "Inverts states of clicked/dragged cells", false, () -> {
+        addButton("XOR", "Edit", "Invert states of clicked/dragged cells", false, "", () -> {
             buttonMap.get("Replace").setSelected(false);
             ((CheckboxMenuItem)menuItemMap.get("Replace")).setState(false);
             buttonMap.get("XOR").setSelected(true);
@@ -112,36 +102,37 @@ public class GUI extends JFrame {
 
         toolBar.addSeparator();
 
-        addButton("Clear", "Edit", "Clears field", true, () -> {
+        addButton("Clear", "Edit", "Clear field", true, "/resources/clear.png", () -> {
             model.clearField();
         });
 
-        addButton("Impact", "View", "Shows impacts of cells", false, new Runnable() {
+        addButton("Impact", "View", "Show impacts of cells", false, "", new Runnable() {
             boolean pressed = false;
 
             @Override
             public void run() {
-                pressed = ! pressed;
+                pressed = !pressed;
                 buttonMap.get("Impact").setSelected(pressed);
                 ((CheckboxMenuItem)menuItemMap.get("Impact")).setState(pressed);
 
-                cellsPanel.showImpacts(pressed);
-                cellsPanel.repaint();
+                fieldPanel.showImpacts(pressed);
+                fieldPanel.prepareImage();
+                fieldPanel.repaint();
             }
         });
 
-        addButton("Step", "Edit", "Make one step of living process", true, ()-> {
+        addButton("Step", "Edit", "Make one step of Life Cycle", true, "/resources/step.png", ()-> {
             model.makeStep();
         });
 
-        addButton("Run", "Edit", "Runs process of living", false, new Runnable() {
+        addButton("Run", "Edit", "Run Life Cycle", false, "/resources/run.png", new Runnable() {
             boolean pressed = false;
 
             @Override
             public void run() {
                 pressed = !pressed;
 
-                buttonMap.get("Save"). setEnabled(!pressed);
+                buttonMap.get("Save").setEnabled(!pressed);
                 menuItemMap.get("Save").setEnabled(!pressed);
                 buttonMap.get("Load"). setEnabled(!pressed);
                 menuItemMap.get("Load").setEnabled(!pressed);
@@ -156,8 +147,8 @@ public class GUI extends JFrame {
 
         toolBar.addSeparator();
 
-        addButton("Settings", "View", "Show game settings", true, () -> {
-            SettingsDialog settingsDialog = new SettingsDialog(model.getField(), cellsPanel.getCellParameters(), model.getParameters(), buttonMap.get("XOR").isSelected(), (cellParams, gameParams, width, height, isXOR) -> {
+        addButton("Settings", "View", "Show game settings", true, "/resources/settings.jpg", () -> {
+            SettingsDialog settingsDialog = new SettingsDialog(model.getField(), fieldPanel.getCellParameters(), model.getParameters(), buttonMap.get("XOR").isSelected(), (cellParams, gameParams, width, height, isXOR) -> {
                 if (isXOR) {
                     buttonMap.get("Replace").setSelected(false);
                     ((CheckboxMenuItem)menuItemMap.get("Replace")).setState(false);
@@ -179,25 +170,39 @@ public class GUI extends JFrame {
                 model.setFieldSize(width, height);
                 model.setParameters(gameParams);
 
-                cellsPanel.repaint();
+                fieldPanel.prepareImage();
+                fieldPanel.repaint();
             });
             settingsDialog.setLocationRelativeTo(this);
             settingsDialog.setVisible(true);
         });
 
-        addButton("Info", "Help", "Show author info", true, () ->
+        addButton("Info", "Help", "Show author's info", true, "/resources/info.jpg", () ->
             JOptionPane.showMessageDialog(null, "Life v.1.0\n" + "Author:\t Ayya Galieva, gr. 16201",
                 "Author info", JOptionPane.INFORMATION_MESSAGE));
         add(toolBar, BorderLayout.NORTH);
         add(statusBar, BorderLayout.SOUTH);
     }
 
-    private void addButton(String name, String menuName, String toolTipText, boolean shutdown, Runnable action) {
+    private void addButton(String name, String menuName, String toolTipText, boolean shutdown, String imagePath, Runnable action) {
         AbstractButton button;
         MenuItem item;
 
+        Image toolImage = null;
+        try {
+            toolImage = ImageIO.read(getClass().getResource(imagePath));
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+        }
+
         if (shutdown) {
-            button = new JButton(name);
+            if (toolImage != null) {
+                button = new JButton();
+                button.setIcon(new ImageIcon(toolImage));
+            }
+            else {
+                button = new JButton(name);
+            }
             item = new MenuItem(name);
             item.addActionListener(e -> {
                 if (item.isEnabled()) {
@@ -206,7 +211,13 @@ public class GUI extends JFrame {
             });
         }
         else {
-            button = new JToggleButton(name);
+            if (toolImage != null) {
+                button = new JToggleButton();
+                button.setIcon(new ImageIcon(toolImage));
+            }
+            else {
+                button = new JToggleButton(name);
+            }
             CheckboxMenuItem checkboxMenuItem = new CheckboxMenuItem(name);
             checkboxMenuItem.addItemListener(e -> {
                 if (checkboxMenuItem.isEnabled())
@@ -251,18 +262,18 @@ public class GUI extends JFrame {
         buttonMap.put(name, button);
     }
 
-    public void close() {
-        if (cellsPanel.isStateChanged()) {
+    private void close() {
+        if (fieldPanel.isStateChanged()) {
             int confirmation = JOptionPane.showConfirmDialog(null, "Save changes?", "Exit", JOptionPane.YES_NO_OPTION);
 
             if (confirmation == JOptionPane.OK_OPTION) {
-                JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir") + "\\Data\\");
+                JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir") + "/test/");
                 fileChooser.setDialogTitle("Save state");
                 int f = fileChooser.showSaveDialog(GUI.this);
                 if (f == JFileChooser.APPROVE_OPTION) {
                     File file = fileChooser.getSelectedFile();
                     if (model != null)
-                        model.saveParametersInFile(file.getAbsolutePath(), cellsPanel.getCellParameters());
+                        model.saveParametersInFile(file.getAbsolutePath(), fieldPanel.getCellParameters());
                 }
             }
         }
@@ -270,13 +281,12 @@ public class GUI extends JFrame {
     }
 
     public void updateCellState(Field field) {
-        this.model.setField(field);
-        cellsPanel.updateCellState(field);
+        fieldPanel.updateCellState(field);
 
-        EventQueue.invokeLater(() -> scrollPane.setViewportView(cellsPanel));
+        EventQueue.invokeLater(() -> scrollPane.setViewportView(fieldPanel));
     }
 
     public void updateCellParameters(CellParameters cellParameters) {
-        cellsPanel.setCellParameters(cellParameters);
+        fieldPanel.setCellParameters(cellParameters);
     }
 }

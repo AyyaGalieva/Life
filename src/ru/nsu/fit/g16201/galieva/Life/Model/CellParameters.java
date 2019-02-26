@@ -2,7 +2,7 @@ package ru.nsu.fit.g16201.galieva.Life.Model;
 
 public class CellParameters implements Cloneable {
     private int size = 20;
-    private int lineWidth = 3;
+    private int lineWidth = 1;
 
     public CellParameters(){}
 

@@ -12,17 +12,17 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 public class SettingsDialog extends JDialog {
-    JPanel panel;
-    JTextField width, height, lineWidth, size;
-    JRadioButton xorButton, replaceButton;
-    JTextField lb, le, bb, be, fi, si;
+    private JPanel panel;
+    private JTextField width, height, lineWidth, size;
+    private JRadioButton xorButton, replaceButton;
+    private JTextField lb, le, bb, be, fi, si;
 
-    static final int MIN_SIZE = 5;
-    static final int MAX_SIZE = 20;
-    static final int MIN_LINE_WIDTH = 1;
-    static final int MAX_LINE_WIDTH = 20;
-    static final int MAX_FIELD_SIZE = 50;
-    static final int MIN_FIELD_SIZE = 2;
+    private static final int MIN_SIZE = 3;
+    private static final int MAX_SIZE = 20;
+    private static final int MIN_LINE_WIDTH = 1;
+    private static final int MAX_LINE_WIDTH = 20;
+    private static final int MAX_FIELD_SIZE = 50;
+    private static final int MIN_FIELD_SIZE = 2;
 
     public SettingsDialog(Field field, CellParameters cellParameters, GameParameters gameParameters, boolean isXOR, ChangeListener changeListener) {
         setSize(400, 500);
@@ -36,12 +36,17 @@ public class SettingsDialog extends JDialog {
 
         addModButton(isXOR);
         panel.add(new JLabel(""));
+        panel.add(new JLabel(""));
+        panel.add(new JLabel(""));
         addGameParameters(gameParameters);
+        panel.add(new JLabel(""));
         panel.add(new JLabel(""));
         addSizeSlider(cellParameters);
         addLineWidthSlider(cellParameters);
         panel.add(new JLabel(""));
+        panel.add(new JLabel(""));
         addFieldSizeParameters(field);
+        panel.add(new JLabel(""));
         panel.add(new JLabel(""));
 
         JButton ok = new JButton("OK");
@@ -170,6 +175,7 @@ public class SettingsDialog extends JDialog {
             replaceButton.setSelected(true);
         });
         panel.add(xorButton);
+        panel.add(new JLabel(""));
         panel.add(replaceButton);
         if (isXOR)
             xorButton.setSelected(true);

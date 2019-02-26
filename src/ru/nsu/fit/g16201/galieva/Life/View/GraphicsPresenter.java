@@ -7,7 +7,7 @@ import java.util.Stack;
 public class GraphicsPresenter {
     private Graphics2D g;
     private BufferedImage image;
-    private Color color = Color.DARK_GRAY;
+    private Color color = Color.black;
     private int lineWidth = 1;
 
     public static final int fontSize = 12;
@@ -79,7 +79,7 @@ public class GraphicsPresenter {
         int err = dx/2;
         int y = p1.y;
         for (int x = Math.min(p1.x, p2.x); x <= Math.max(p1.x, p2.x); ++x) {
-            image.setRGB(swapXY?y:x, swapXY?x:y, color.getRGB());
+            image.setRGB(swapXY ? y : x, swapXY ? x : y, color.getRGB());
             err -= dy;
             if (err < 0) {
                 y+=stepY;
@@ -101,17 +101,9 @@ public class GraphicsPresenter {
         g.drawString(str, p.x, p.y);
     }
 
-    public Color getColor() {
-        return color;
-    }
-
     public void setColor(Color color) {
         this.color = color;
         g.setColor(color);
-    }
-
-    public int getLineWidth() {
-        return lineWidth;
     }
 
     public void setLineWidth(int lineWidth) {
