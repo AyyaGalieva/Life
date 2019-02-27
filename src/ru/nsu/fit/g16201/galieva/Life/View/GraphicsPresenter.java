@@ -78,7 +78,7 @@ public class GraphicsPresenter {
         int dy = Math.abs(p2.y - p1.y);
         int err = dx/2;
         int y = p1.y;
-        for (int x = Math.min(p1.x, p2.x); x <= Math.max(p1.x, p2.x); ++x) {
+        for (int x = p1.x; x <= p2.x; ++x) {
             image.setRGB(swapXY ? y : x, swapXY ? x : y, color.getRGB());
             err -= dy;
             if (err < 0) {

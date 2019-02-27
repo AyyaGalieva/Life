@@ -270,12 +270,6 @@ public class SettingsDialog extends JDialog {
                 return false;
             }
 
-            Double.parseDouble(lb.getText());
-            Double.parseDouble(le.getText());
-            Double.parseDouble(bb.getText());
-            Double.parseDouble(be.getText());
-            Double.parseDouble(fi.getText());
-            Double.parseDouble(si.getText());
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(SettingsDialog.this, e.getMessage(), "error", JOptionPane.WARNING_MESSAGE);
         }

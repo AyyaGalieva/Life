@@ -281,12 +281,16 @@ public class GUI extends JFrame {
     }
 
     public void updateCellState(Field field) {
-        fieldPanel.updateCellState(field);
+        fieldPanel.updateField(field);
 
         EventQueue.invokeLater(() -> scrollPane.setViewportView(fieldPanel));
     }
 
     public void updateCellParameters(CellParameters cellParameters) {
         fieldPanel.setCellParameters(cellParameters);
+    }
+
+    public void showFileIncorrect() {
+        JOptionPane.showMessageDialog(this, "File is incorrect", "error", JOptionPane.WARNING_MESSAGE);
     }
 }

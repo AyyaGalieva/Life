@@ -189,7 +189,7 @@ public class FieldPanel extends JPanel{
         this.cellParameters = cellParameters;
     }
 
-    public void updateCellState(Field field) {
+    public void updateField(Field field) {
         this.field = field;
         this.prepareImage();
         this.repaint();

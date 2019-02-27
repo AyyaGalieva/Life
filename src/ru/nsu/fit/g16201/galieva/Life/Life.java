@@ -13,6 +13,6 @@ public class Life {
         view.setVisible(true);
 
         Timer timer = new Timer();
-        timer.schedule(m, 0, 100);
+        timer.schedule(m, 0, 1000);
     }
 }

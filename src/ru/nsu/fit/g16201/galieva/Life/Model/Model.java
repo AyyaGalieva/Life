@@ -140,12 +140,19 @@ public class Model extends TimerTask {
             int height = getNextParameter(in);
             int lineWidth = getNextParameter(in);
             int size = getNextParameter(in);
+            if (size > 20 || size < 3 || lineWidth > 20 || lineWidth < 1) {
+                view.showFileIncorrect();
+                return;
+            }
+
             int alive = getNextParameter(in);
             Field newField = new Field(width, height);
 
             for (int i = 0; i < alive; ++i) {
                  int x = getNextParameter(in);
                  int y = getNextParameter(in);
+                 if (x == -1 || y == -1)
+                     break;
                  if (x < width && y < height)
                     newField.setCellState(x, y, true);
             }
@@ -166,13 +173,15 @@ public class Model extends TimerTask {
     }
 
     private int getNextParameter(Scanner in) {
-        while (!in.hasNextInt()) {
+        while (!in.hasNextInt() && in.hasNextLine()) {
             String str[] = (in.nextLine()).split("//");
             try {
                 return Integer.parseInt(str[0]);
             } catch (NumberFormatException e) {}
         }
-        return in.nextInt();
+        if (in.hasNextInt())
+            return in.nextInt();
+        return -1;
     }
 
     public void saveParametersInFile(String path, CellParameters parameters) {
