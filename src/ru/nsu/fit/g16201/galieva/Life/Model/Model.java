@@ -41,8 +41,10 @@ public class Model extends TimerTask {
         }
         setNewImpacts();
 
-        if (view!=null)
+        if (view!=null) {
+            view.getFieldPanel().fillCells();
             view.updateCellState(field);
+        }
     }
 
     private boolean isCellExists(int x, int y) {
@@ -71,8 +73,10 @@ public class Model extends TimerTask {
         field = newField;
         setNewImpacts();
 
-        if (view!=null)
+        if (view!=null) {
             view.updateCellState(field);
+            EventQueue.invokeLater(() -> view.getFieldPanel().fillCells());
+        }
     }
 
     private double calculateCellImpact(int x, int y) {
@@ -165,7 +169,7 @@ public class Model extends TimerTask {
 
             if (view!=null) {
                 view.updateCellParameters(newCellParameters);
-                view.updateCellState(field);
+                view.updateFieldParameters(field);
             }
         } catch (FileNotFoundException e) {
             System.err.println(e.getMessage());

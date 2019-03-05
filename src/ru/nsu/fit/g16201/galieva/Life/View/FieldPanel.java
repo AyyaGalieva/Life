@@ -13,14 +13,18 @@ import java.awt.image.BufferedImage;
 public class FieldPanel extends JPanel{
 
     private Field field;
-    private BufferedImage image;
-    int imageWidth, imageHeight;
+    private BufferedImage fieldImage, impactImage;
+    private GraphicsPresenter fieldPresenter;
+    private int imageWidth, imageHeight;
     private CellParameters cellParameters;
     private boolean impactsMode;
+    private boolean xorMode;
+    private boolean runMode;
 
     private static final Color borderColor = Color.black;
     private static final Color fontColor = Color.darkGray;
     private static final Color spanColor = Color.cyan;
+    private static final Color backgroundColor = new Color(238, 238, 238);
 
     private int startX = 0, startY = 0;
     private int cellSize = 0;
@@ -49,11 +53,24 @@ public class FieldPanel extends JPanel{
             @Override
             public void mouseDragged(MouseEvent event) {
                 super.mouseDragged(event);
-                Point cell = defineCell(new Point(event.getX(), event.getY()));
-                if ((cell != null) && (prevCell == null || !prevCell.equals(cell))) {
-                    prevCell = cell;
-                    stateChanged = true;
-                    clickListener.onClick(cell);
+                if (!runMode) {
+                    Point cell = defineCell(new Point(event.getX(), event.getY()));
+                    if ((cell != null) && (prevCell == null || !prevCell.equals(cell))) {
+                        prevCell = cell;
+                        stateChanged = true;
+                        clickListener.onClick(cell);
+                        if (xorMode && fieldImage.getRGB(event.getX(), event.getY()) == spanColor.getRGB()) {
+                            fieldPresenter.setColor(backgroundColor);
+                            fieldPresenter.spanFilling(new Point(event.getX(), event.getY()));
+                            fieldPresenter.setColor(borderColor);
+                        } else if (fieldImage.getRGB(event.getX(), event.getY()) != spanColor.getRGB()) {
+                            fieldPresenter.setColor(spanColor);
+                            fieldPresenter.spanFilling(new Point(event.getX(), event.getY()));
+                            fieldPresenter.setColor(borderColor);
+                        }
+                        printImpacts();
+                        repaint();
+                    }
                 }
             }
 
@@ -64,9 +81,9 @@ public class FieldPanel extends JPanel{
             }
 
             private Point defineCell(Point p) {
-                if (p.x<0 || p.y<0 || p.x >= image.getWidth() || p.y >= image.getHeight())
+                if (p.x<0 || p.y<0 || p.x >= fieldImage.getWidth() || p.y >= fieldImage.getHeight())
                     return null;
-                if (image.getRGB(p.x, p.y) != borderColor.getRGB()) {
+                if (fieldImage.getRGB(p.x, p.y) != borderColor.getRGB()) {
                     int approximateX = (p.x-startX)/(2*halfCellWidth);
                     int approximateY = (p.y-startY)/(cellSize+halfCellSize);
 
@@ -86,7 +103,7 @@ public class FieldPanel extends JPanel{
                             }
                         }
                     }
-                    if (realPoint.x >= 0 && realPoint.y >= 0 && realPoint.x <= field.getWidth() - realPoint.y%2 && realPoint.y <= field.getHeight()) {
+                    if (realPoint.x >= 0 && realPoint.y >= 0 && realPoint.x < field.getWidth() - realPoint.y%2 && realPoint.y < field.getHeight()) {
                         return realPoint;
                     }
                 }
@@ -98,9 +115,9 @@ public class FieldPanel extends JPanel{
         this.prepareImage();
     }
 
-    private void drawCells(GraphicsPresenter presenter) {
-        presenter.setLineWidth(cellParameters.getLineWidth());
-        presenter.setColor(borderColor);
+    private void drawCells() {
+        fieldPresenter.setLineWidth(cellParameters.getLineWidth());
+        fieldPresenter.setColor(borderColor);
         int y0 = startY;
         for (int y = 0; y < field.getHeight(); ++y) {
             int x0 = startX - 2*halfCellWidth;
@@ -108,50 +125,76 @@ public class FieldPanel extends JPanel{
             for (int x = 0; x < field.getWidth() - y%2; ++x) {
                 x0 += 2*halfCellWidth;
 
-                presenter.drawLine(new Point(x0, y0+halfCellSize), new Point(x0, y0+halfCellSize+cellSize));
-                presenter.drawLine(new Point(x0, y0+halfCellSize), new Point(x0+halfCellWidth, y0));
-                if (y==0 || x==field.getWidth()-1){}
-                    presenter.drawLine(new Point(x0+halfCellWidth, y0), new Point(x0+2*halfCellWidth, y0+halfCellSize));
+                fieldPresenter.drawLine(new Point(x0, y0+halfCellSize), new Point(x0, y0+halfCellSize+cellSize));
+                fieldPresenter.drawLine(new Point(x0, y0+halfCellSize), new Point(x0+halfCellWidth, y0));
+                fieldPresenter.drawLine(new Point(x0+halfCellWidth, y0), new Point(x0+2*halfCellWidth, y0+halfCellSize));
                 if (y==field.getHeight()-1 || x==0)
-                presenter.drawLine(new Point(x0, y0+cellSize+halfCellSize), new Point(x0+halfCellWidth, y0+2*cellSize));
+                fieldPresenter.drawLine(new Point(x0, y0+cellSize+halfCellSize), new Point(x0+halfCellWidth, y0+2*cellSize));
                 if (y==field.getHeight()-1)
-                    presenter.drawLine(new Point(x0+halfCellWidth, y0+2*cellSize), new Point(x0+2*halfCellWidth, y0+cellSize+halfCellSize));
+                    fieldPresenter.drawLine(new Point(x0+halfCellWidth, y0+2*cellSize), new Point(x0+2*halfCellWidth, y0+cellSize+halfCellSize));
             }
-            presenter.drawLine(new Point(x0+2*halfCellWidth, y0+halfCellSize), new Point(x0+2*halfCellWidth, y0+cellSize+halfCellSize));
+            fieldPresenter.drawLine(new Point(x0+2*halfCellWidth, y0+halfCellSize), new Point(x0+2*halfCellWidth, y0+cellSize+halfCellSize));
             if (y%2==0 && y!=field.getHeight()-1) {
-                presenter.drawLine(new Point(x0+2*halfCellWidth, y0+cellSize+halfCellSize), new Point(x0+halfCellWidth, y0+2*cellSize));
+                fieldPresenter.drawLine(new Point(x0+2*halfCellWidth, y0+cellSize+halfCellSize), new Point(x0+halfCellWidth, y0+2*cellSize));
             }
             y0 += cellSize+halfCellSize;
         }
-
-        fillCells(presenter);
     }
 
-    private void fillCells(GraphicsPresenter presenter) {
+    public void fillCells() {
         int y0 = startY;
+        impactImage = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_ARGB);
+        Graphics impactGraphics = impactImage.createGraphics();
+        impactGraphics.setFont(new Font("Times New Roman", Font.PLAIN, 12));
+        impactGraphics.setColor(fontColor);
         for (int y = 0; y < field.getHeight(); ++y) {
             int x0 = startX-2*halfCellWidth;
             x0 += y%2==1?halfCellWidth:0;
             for (int x = 0; x < field.getWidth() - y%2; ++x) {
                 x0 += 2*halfCellWidth;
-                if (field.getCellState(x, y)) {
-                    presenter.setColor(spanColor);
-                    presenter.spanFilling(new Point(x0+cellParameters.getLineWidth()/2+1, y0+cellSize+1));
-                    presenter.setColor(borderColor);
+                if (field.getCellState(x, y) && fieldImage.getRGB(x0+cellParameters.getLineWidth()/2+1, y0+cellSize+1) != spanColor.getRGB()) {
+                    fieldPresenter.setColor(spanColor);
+                    fieldPresenter.spanFilling(new Point(x0+cellParameters.getLineWidth()/2+1, y0+cellSize+1));
+                    fieldPresenter.setColor(borderColor);
                 }
-                if (impactsMode && cellParameters.getSize() >= 10) {
-                    String str;
-                    double impact = field.getCellImpact(x, y);
-                    if (impact - (long)impact < 0.0001)
-                        str = String.format("%.0f", impact);
-                    else str = String.format("%.1f", impact);
+                if (!field.getCellState(x, y) && fieldImage.getRGB(x0+cellParameters.getLineWidth()/2+1, y0+cellSize+1) == spanColor.getRGB()) {
+                    fieldPresenter.setColor(backgroundColor);
+                    fieldPresenter.spanFilling(new Point(x0+cellParameters.getLineWidth()/2+1, y0+cellSize+1));
+                    fieldPresenter.setColor(borderColor);
+                }
 
-                    presenter.setColor(fontColor);
-                    presenter.printString(str, new Point((int) (x0+halfCellWidth-(str.length()/2.0)*(GraphicsPresenter.fontSize/2.0)), (int) y0+cellSize+ GraphicsPresenter.fontSize/2));
-                    presenter.setColor(borderColor);
-                }
+                printImpactString(x0, y0, x, y, impactGraphics);
             }
             y0 += cellSize+halfCellSize;
+        }
+    }
+
+    public void printImpacts() {
+        int y0 = startY;
+        impactImage = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_ARGB);
+        Graphics impactGraphics = impactImage.createGraphics();
+        impactGraphics.setFont(new Font("Times New Roman", Font.PLAIN, 12));
+        impactGraphics.setColor(fontColor);
+        for (int y = 0; y < field.getHeight(); ++y) {
+            int x0 = startX-2*halfCellWidth;
+            x0 += y%2==1?halfCellWidth:0;
+            for (int x = 0; x < field.getWidth() - y%2; ++x) {
+                x0 += 2*halfCellWidth;
+
+                printImpactString(x0, y0, x, y, impactGraphics);
+            }
+            y0 += cellSize+halfCellSize;
+        }
+    }
+
+    private void printImpactString(int x0, int y0, int x, int y, Graphics impactGraphics){
+        if (impactsMode && cellParameters.getSize() >= 10) {
+            String str;
+            double impact = field.getCellImpact(x, y);
+            if (impact - (long)impact < 0.0001)
+                str = String.format("%.0f", impact);
+            else str = String.format("%.1f", impact);
+            impactGraphics.drawString(str, (int)(x0+halfCellWidth-(str.length()/2.0)*(GraphicsPresenter.fontSize/2.0)), (int) y0+cellSize+ GraphicsPresenter.fontSize/2);
         }
     }
 
@@ -162,23 +205,36 @@ public class FieldPanel extends JPanel{
         halfCellSize = cellSize/2;
         halfCellWidth = (int) Math.round(cellSize*Math.sqrt(3)/2);
 
-        imageWidth = 2*field.getWidth()*halfCellWidth+cellParameters.getLineWidth();
-        imageHeight = (cellSize+halfCellSize)*(field.getHeight()+1) - cellSize + cellParameters.getLineWidth() + 1;
+        int newImageWidth = 2*field.getWidth()*halfCellWidth+cellParameters.getLineWidth();
+        int newImageHeight = (cellSize+halfCellSize)*(field.getHeight()+1) - cellSize + cellParameters.getLineWidth() + 1;
+        if (newImageWidth != imageWidth || newImageHeight != imageHeight) {
+            imageWidth = newImageWidth;
+            imageHeight = newImageHeight;
+            fieldImage = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_ARGB);
+            impactImage = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_ARGB);
 
-        image = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_ARGB);
-        GraphicsPresenter presenter = new GraphicsPresenter(image.createGraphics(), image);
-        drawCells(presenter);
-        setPreferredSize(new Dimension(imageWidth, imageHeight));
+            fieldPresenter = new GraphicsPresenter(fieldImage.createGraphics(), fieldImage);
+            drawCells();
+
+            setPreferredSize(new Dimension(imageWidth, imageHeight));
+        }
+        fillCells();
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        g.drawImage(image, 0, 0, imageWidth, imageHeight, this);
+        g.drawImage(fieldImage, 0, 0, imageWidth, imageHeight, this);
+        g.drawImage(impactImage, 0, 0, imageWidth, imageHeight, this);
     }
 
     public void showImpacts(boolean enabled) {
         impactsMode = enabled;
+        if (enabled) {
+            printImpacts();
+        } else {
+            impactImage = new BufferedImage(imageWidth, imageHeight, BufferedImage.TYPE_INT_ARGB);
+        }
     }
 
     public CellParameters getCellParameters() {
@@ -189,7 +245,12 @@ public class FieldPanel extends JPanel{
         this.cellParameters = cellParameters;
     }
 
-    public void updateField(Field field) {
+    public void updateFieldState(Field field) {
+        this.field = field;
+        this.repaint();
+    }
+
+    public void updateFieldParameters(Field field) {
         this.field = field;
         this.prepareImage();
         this.repaint();
@@ -201,5 +262,13 @@ public class FieldPanel extends JPanel{
 
     public boolean isStateChanged() {
         return stateChanged;
+    }
+
+    public void setRunMode(boolean runMode) {
+        this.runMode = runMode;
+    }
+
+    public void setXorMode(boolean xorMode) {
+        this.xorMode = xorMode;
     }
 }

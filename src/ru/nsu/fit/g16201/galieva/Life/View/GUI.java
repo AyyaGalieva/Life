@@ -85,6 +85,7 @@ public class GUI extends JFrame {
             buttonMap.get("Replace").setSelected(true);
             ((CheckboxMenuItem)menuItemMap.get("Replace")).setState(true);
 
+            fieldPanel.setXorMode(false);
             model.turnOnReplaceMode();
         });
 
@@ -97,6 +98,7 @@ public class GUI extends JFrame {
             buttonMap.get("XOR").setSelected(true);
             ((CheckboxMenuItem)menuItemMap.get("XOR")).setState(true);
 
+            fieldPanel.setXorMode(true);
             model.turnOnXORMode();
         });
 
@@ -142,6 +144,7 @@ public class GUI extends JFrame {
                 menuItemMap.get("Step").setEnabled(!pressed);
 
                 model.setRunMode(pressed);
+                fieldPanel.setRunMode(pressed);
             }
         });
 
@@ -281,7 +284,13 @@ public class GUI extends JFrame {
     }
 
     public void updateCellState(Field field) {
-        fieldPanel.updateField(field);
+        fieldPanel.updateFieldState(field);
+
+        EventQueue.invokeLater(() -> scrollPane.setViewportView(fieldPanel));
+    }
+
+    public void updateFieldParameters(Field field) {
+        fieldPanel.updateFieldParameters(field);
 
         EventQueue.invokeLater(() -> scrollPane.setViewportView(fieldPanel));
     }
@@ -292,5 +301,9 @@ public class GUI extends JFrame {
 
     public void showFileIncorrect() {
         JOptionPane.showMessageDialog(this, "File is incorrect", "error", JOptionPane.WARNING_MESSAGE);
+    }
+
+    public FieldPanel getFieldPanel() {
+        return fieldPanel;
     }
 }
