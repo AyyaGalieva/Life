@@ -7,10 +7,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.text.ParseException;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Scanner;
-import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -140,8 +138,15 @@ public class Model extends TimerTask {
         try {
             Scanner in = new Scanner(new File(path));
 
-            int width = getNextParameter(in);
-            int height = getNextParameter(in);
+            /*int width = getNextParameter(in);
+            int height = getNextParameter(in);*/
+            Point fieldSize = getFieldSizeFromFile(in);
+            if (fieldSize == null) {
+                view.showFileIncorrect();
+                return;
+            }
+            int width = fieldSize.x;
+            int height = fieldSize.y;
             int lineWidth = getNextParameter(in);
             int size = getNextParameter(in);
             if (size > 20 || size < 3 || lineWidth > 20 || lineWidth < 1) {
@@ -152,15 +157,27 @@ public class Model extends TimerTask {
             int alive = getNextParameter(in);
             Field newField = new Field(width, height);
 
+            List<Point> aliveCells = new LinkedList<>();
+
             for (int i = 0; i < alive; ++i) {
                  int x = getNextParameter(in);
                  int y = getNextParameter(in);
                  if (x == -1 || y == -1)
                      break;
-                 if (x < width && y < height)
-                    newField.setCellState(x, y, true);
+                 if (x < width && y < height) {
+                     aliveCells.add(new Point(x, y));
+                 }
             }
             in.close();
+
+            if (aliveCells.size() != alive) {
+                view.showFileIncorrect();
+                return;
+            }
+
+            for (int i = 0; i < alive; ++i) {
+                newField.setCellState(aliveCells.get(i).x, aliveCells.get(i).y, true);
+            }
 
             CellParameters newCellParameters = new CellParameters(size, lineWidth);
 
@@ -174,6 +191,24 @@ public class Model extends TimerTask {
         } catch (FileNotFoundException e) {
             System.err.println(e.getMessage());
         }
+    }
+
+    private Point getFieldSizeFromFile(Scanner in) {
+        Point size = new Point();
+
+        if (in.hasNext()) {
+            String params = in.nextLine();
+            String param[] = params.split("//");
+            try {
+                String fieldSize[] = param[0].split(" ");
+                if (fieldSize.length != 2)
+                    return null;
+                size.x = Integer.parseInt(fieldSize[0]);
+                size.y = Integer.parseInt(fieldSize[1]);
+                return size;
+            } catch (NumberFormatException e) {}
+        }
+        return null;
     }
 
     private int getNextParameter(Scanner in) {
